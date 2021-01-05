@@ -1,0 +1,445 @@
+﻿@model CustomrsFinder.Models.ViewModels.CustomerFinderModel
+@{
+    ViewData["Title"] = "Информация по контрагентам";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@if(ViewBag.user.UserRole.name == "admin" | ViewBag.user.UserRole.name == "boss")
+{
+    <form asp-action="AddFile" asp-controller="CustomerFinder" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <input type="file" name="uploadedFile" />
+            <input type="submit" value="Загрузить" />
+        </div>
+    </form>
+}
+
+
+<div id="content__table">
+    @await Html.PartialAsync("TableBody")
+</div>
+
+
+<div class="preloader hidden">
+    <img src="~/images/preloader.svg" alt="preloader" class="preloader__item">
+</div>
+
+<!--start the error modal window-->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Информация</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="error-modal-body">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end the error modal window-->
+
+@*<input type="button" id="bindModif__button" />
+
+<input type="button" id="send_message" value="Send a message" />*@
+
+@section scripts
+    {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#content__table').on('click', '.list-group-item-action', function () {
+                var getPhone = $(this)[0].getAttribute('data-phone');
+                var posId = $(this)[0].parentElement.parentElement.parentElement.parentElement.getAttribute('data-posid');
+                $.ajax({
+                    url: "/api/MainTable/GetCall",
+                    dataType: "json",
+                    data: {
+                        tel: getPhone,
+                        posId: posId
+                    },
+                    type: "get",
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (data) {
+                    },
+                    error: function (xhr) {
+                    }
+                });
+            });
+
+            //$('#bindModif__button').on('click', function () {
+            //    $.ajax({
+            //        url: "/api/CustomerSearch/MainTable/GetCall",
+            //        dataType: "json",
+            //        data: {
+            //            tel: '9275088598'
+            //        },
+            //        type: "get",
+            //        contentType: 'application/json; charset=utf-8',
+            //        success: function (data) {
+            //        },
+            //        error: function (xhr) {
+            //        }
+            //    });
+            //});
+
+            $('#content__table').on('click', '.sent-message__button', function () {
+                var managetId = $(this)[0].previousElementSibling.value;
+                var posId = $(this)[0].parentElement.parentElement.parentElement.getAttribute('data-posid');
+                //var message = $(this)[0].parentElement.parentElement.previousElementSibling.firstElementChild.innerText;
+                $.ajax({
+                    url: "/api/MainTable/SendMail",
+                    dataType: "json",
+                    data: {
+                        managetId: managetId,
+                        posId: posId
+                    },
+                    type: "get",
+                    contentType: 'application/json; charset=utf-8',
+                    beforeSend: function () {
+                        var el = document.getElementsByClassName("preloader")[0];
+                        el.classList.remove("hidden");
+                    },
+                    success: function (data) {
+                        addErrorModalCommon(data);
+                    },
+                    complete: function () {
+                        var el = document.getElementsByClassName("preloader")[0];
+                        el.classList.add("hidden");
+                    },
+                    error: function (xhr) {
+                        //var error = JSON.parse(xhr.responseText);
+                        //if (xhr.responseJSON["notAvailable"]) {
+                        //    addErrorModalCommon(xhr.responseJSON["notAvailable"]);
+                        //}
+                    }
+                });
+            });
+
+            function addErrorModalCommon(text) {
+                var modalBody = document.getElementById('error-modal-body');
+                modalBody.innerText = text;
+                $('#errorModal').modal('show')
+            }
+
+            $('#content__table').on('click', '.status__button', function () {
+                var btn = $(this)[0];
+                var parentDiv = btn.parentElement;
+                var phone = parentDiv.firstElementChild;
+                var phoneId = parentDiv.getAttribute('data-phone-id');
+                if (phone.className.includes('list-group-item-empty')) {
+                    if (btn.className.includes('btn-success')) {
+                        SetPhoneSuccesStatus(phoneId, "success");
+                        phone.classList.toggle('list-group-item-empty');
+                        phone.classList.toggle('list-group-item-success');
+                        btn.remove();
+                    }
+                    else {
+                        SetPhoneSuccesStatus(phoneId, "notsuccess");
+                        phone.classList.toggle('list-group-item-empty');
+                        phone.classList.toggle('list-group-item-danger');
+                        btn.remove();
+                    }
+                }
+                else if (phone.className.includes('list-group-item-success')) {
+                    SetPhoneSuccesStatus(phoneId, "notsuccess");
+                    phone.classList.toggle('list-group-item-success');
+                    phone.classList.toggle('list-group-item-danger');
+                    btn.remove();
+                    parentDiv.appendChild(CreateBtnSuccess("Пометить как актуальный номер"));
+                }
+                else if (phone.className.includes('list-group-item-danger')) {
+                    SetPhoneSuccesStatus(phoneId, "success");
+                    phone.classList.toggle('list-group-item-danger');
+                    phone.classList.toggle('list-group-item-success');
+                    btn.remove();
+                    parentDiv.appendChild(CreateBtnError("Пометить как неактуальный номер"));
+                }
+            });
+
+            function SetPhoneSuccesStatus(phoneId, status) {
+                var data = { status: status, phoneId: phoneId };
+                $.ajax({
+                    url: '/api/MainTable/SetPhoneStatus',
+                    dataType: "json",
+                    type: "POST",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(data),
+                    success: function (data) { },
+                    error: function (xhr) { }
+                });
+            }            
+
+            //Start Change data
+            function ClearEditing() {
+                isEdit = false;
+                isEditStatus = false;
+            }
+
+            var isEdit = false;
+            $('#content__table').on('click', '.comments__td', function () {
+                if (!isEdit) {
+                    isEdit = true;
+                    var td = $(this)[0];
+                    var previousCommentsEle = $(this)[0].firstElementChild;
+                    var posId = td.parentElement.getAttribute('data-posid');
+                    var heightTR = td.parentElement.clientHeight;
+
+                    previousCommentsEle.classList.add('d-none');
+
+                    var input = inputElement(heightTR);
+                    input.value = previousCommentsEle.innerText;
+                    var nextCommentsEle = previousCommentsEle.nextElementSibling.appendChild(input);
+                    input.focus();
+                }
+            });
+
+            $('#content__table').on('blur', '#edit__input', function () {
+                var input = $(this)[0];
+                var p = input.parentElement.previousElementSibling;
+                var comments = input.value;
+                var posId = p.parentElement.parentElement.getAttribute('data-posid');
+                p.innerText = comments;
+
+                var data = { comments: comments, posId: posId };
+                $.ajax({
+                    url: '/api/MainTable/SetComments',
+                    dataType: "json",
+                    type: "POST",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(data),
+                    success: function (data) { },
+                    error: function (xhr) { }
+                });
+
+                input.remove();
+                p.classList.remove('d-none');
+                isEdit = false;
+            });
+
+            var isEditStatus = false;
+            $('#content__table').on('click', '.red-status__button', function () {
+                if (!isEditStatus) {
+                    openChangeStatusPanel($(this)[0]);
+                }
+                else {
+                    var btChange = document.getElementById('change-status__button');
+                    var changeDiv = btChange.parentElement;
+                    changeDiv.innerHTML = "";
+                    var statusDiv = changeDiv.previousElementSibling;
+                    var label = statusDiv.firstElementChild;
+                    label.classList.remove('d-none');
+                    var btEdit = statusDiv.lastElementChild;
+                    btEdit.classList.remove('d-none');
+                    openChangeStatusPanel($(this)[0]);
+                }
+            });
+
+            function openChangeStatusPanel(bt) {
+                isEditStatus = true;
+                var td = bt.parentElement.parentElement;
+
+                var statusId = td.firstElementChild.firstElementChild.getAttribute('data-status-id');
+                var label = td.firstElementChild.firstElementChild;
+                label.classList.add('d-none');
+                bt.classList.add('d-none');
+
+                var selectBox = selectElement(positionStatuses, "status__select");
+                var statusDiv = td.lastElementChild;
+                statusDiv.appendChild(selectBox);
+                statusDiv.appendChild(CreateBtnSuccess("Изменить", "change-status__button"));
+                statusDiv.appendChild(CreateBtnError("Отменить", "close-status__button"));
+                selectBox.value = statusId;
+                selectBox.focus();
+            }
+
+            $('#content__table').on('click', '#close-status__button', function (e) {
+                isEditStatus = false;
+                var selectBox = $(this)[0].parentElement.firstElementChild;
+                var td = selectBox.parentElement.parentElement;
+                var selectDiv = selectBox.parentElement;
+                selectDiv.innerHTML = "";
+                var label = td.firstElementChild.firstElementChild;
+                label.classList.remove('d-none');
+                var btEdit = td.firstElementChild.lastElementChild.classList.remove('d-none');
+
+                //var posId = td.parentElement.getAttribute('data-posid');
+                //var statusId = selectBox.value;
+            });
+
+            $('#content__table').on('click', '#change-status__button', function (e) {
+                isEditStatus = false;
+                var selectBox = $(this)[0].parentElement.firstElementChild;
+                var statusId = selectBox.value;
+
+                var td = selectBox.parentElement.parentElement;
+                var posId = td.parentElement.getAttribute('data-posid');
+                
+                
+                var label = td.firstElementChild.firstElementChild;
+                label.innerText = selectBox.options[selectBox.selectedIndex].text;
+                label.classList.remove('d-none');
+                label.setAttribute('data-status-id', statusId)
+                var btEdit = td.firstElementChild.lastElementChild.classList.remove('d-none');
+
+                var selectDiv = selectBox.parentElement;
+                selectDiv.innerHTML = "";
+
+                $.get('/api/MainTable/ChangeStatus', {
+                    posId: posId,
+                    statusId: statusId
+                });                
+            });
+
+            //$('#content__table').on('click', '.status__td', function () {
+            //    if (!isEditStatus) {
+            //        isEditStatus = true;
+            //        var td = $(this)[0];
+            //        var statusId = td.firstElementChild.getAttribute('data-status-id');
+            //        var label = td.firstElementChild;
+            //        label.classList.add('d-none');
+            //        //var posId = td.parentElement.getAttribute('data-posid');
+
+            //        var selectBox = selectElement(positionStatuses, "status__select");
+            //        var statusDiv = td.lastElementChild;
+            //        statusDiv.appendChild(selectBox);
+            //        selectBox.value = statusId;
+            //        selectBox.focus();
+            //    }
+            //});
+
+            //$('#content__table').on('blur', '#status__select', function (e) {
+            //    isEditStatus = false;
+            //    var selectBox = $(this)[0];
+            //    var td = selectBox.parentElement.parentElement;
+            //    var selectDiv = selectBox.parentElement;
+            //    selectDiv.innerHTML = "";
+            //    var label = td.firstElementChild;
+            //    label.classList.remove('d-none');
+
+            //    var posId = td.parentElement.getAttribute('data-posid');
+            //    var statusId = selectBox.value;
+            //});
+
+            var positionStatuses;
+            saveStatuses();
+
+            function saveStatuses() {
+                $.ajax({
+                    url: '/api/MainTable/GetStatuses',
+                    dataType: "json",
+                    type: "Get",
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (data) {
+                        positionStatuses = data;
+                    },
+                    error: function (xhr) { }
+                });
+            }
+
+            
+
+            //END Change data
+
+            $('#content__table').on('click', '.page-link', function () {
+                ClearEditing();
+                var page = this.innerText;
+                $.ajax({
+                    url: '/CustomerFinder/GetPositions',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'html',
+                    type: "get", //to do a post request
+                    cache: false, //avoid caching results
+                    data: {
+                        currentPage: page
+                    },
+                    beforeSend: function () {
+                        var el = document.getElementsByClassName("preloader")[0];
+                        el.classList.remove("hidden");
+                    },
+                    success: function (data) {
+                        $('#content__table').html(data);
+                    },
+                    complete: function () {
+                        var el = document.getElementsByClassName("preloader")[0];
+                        el.classList.add("hidden");
+                    },
+                    error: function (xhr) {
+                        alert('error');
+                    }
+                });
+            });
+
+            $('#accept-filters').on('click', function () {
+                ClearEditing();
+                var form = document.getElementById('filters');
+                var formData = new FormData(form);
+                var cboxes = document.getElementsByClassName('form-check-input');
+                var checked = [];
+                for (var i = 0; i < cboxes.length; i++) {
+                    cboxes[i].checked ? checked.push(cboxes[i].value) : null;
+                }
+                if (checked.length == 1) formData.append('customerType', checked[0]) 
+                else formData.append('customerType', '0');
+                $.ajax({
+                    url: '/CustomerFinder/SetFilter',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'html',
+                    type: "POST", //to do a post request
+                    cache: false, //avoid caching results
+                    data: JSON.stringify(Object.fromEntries(formData)),
+                    beforeSend: function () {
+                        var el = document.getElementsByClassName("preloader")[0];
+                        el.classList.remove("hidden");
+                    },
+                    success: function (data) {
+                        $('#content__table').html(data);
+                    },
+                    complete: function () {
+                        var el = document.getElementsByClassName("preloader")[0];
+                        el.classList.add("hidden");
+                        isOpenNav = false;
+                        document.getElementById("mySidenav").style.width = "0";
+                    },
+                    error: function (xhr) {
+                        alert('error');
+                    }
+                });
+            });
+
+            getFilters();
+
+             function getFilters() {
+                $.ajax({
+                    url: '/CustomerFinder/GetFilter',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: 'json',
+                    type: "get", //to do a post request
+                    cache: false, //avoid caching results
+                    success: function (filters) {
+                        if (filters.customerTypes == 0) {
+                            document.getElementById("custip").checked = true;
+                            document.getElementById("custcomp").checked = true;
+                        }
+                        else if (filters.customerTypes == 1) document.getElementById("custip").checked = true;
+                        else document.getElementById("custcomp").checked = true;
+                    },
+                    error: function (xhr) {
+                        alert('error');
+                    }
+                });
+             }
+
+
+            $('#content__table').on('dblclick', '.row-item', function () {
+                var posId = $(this)[0].getAttribute('data-posid');
+                window.open(`/ExtendedPosition/Index?posId=${posId}`, "_blank");
+            });
+        });
+    </script>
+}

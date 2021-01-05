@@ -1,0 +1,120 @@
+﻿@model CustomrsFinder.Models.ViewModels.CustomerFinderModel
+
+@if (Model.Data.Count != 0)
+{
+    <table class="table table-sm table-hover table-bordered table-sticky">
+        <thead class="thead-dark">
+            <tr style="text-align: center;">
+                <th>Наименование</th>
+                <th>Руководитель</th>
+                <th style="min-width: 230px;">Номер телефона</th>
+                <th style="width: 186px;">Почта</th>
+                <th>Адрес</th>
+                <th>Сайт</th>
+                <th style="width: 400px;">Комментарии</th>
+                <th style="width: 186px;">Менеджер</th>
+                <th style="width: 186px;">Статус</th>
+            </tr>
+        </thead>
+        <tbody id="customerinfo__table-body" style="cursor:pointer;">
+            @for (var i = 0; i < Model.Data.Count; i++)
+            {
+            <tr class="text-center row-item" data-posid="@Model.Data[i].Id">
+                <td>@Model.Data[i].Name</td>
+                <td>@Model.Data[i].Boss</td>
+                <td>
+                    @if (Model.Data[i].CustomerPhones.Count != 0)
+                    {
+                        @foreach (var phone in Model.Data[i].CustomerPhones)
+                        {
+                            <div class="list-group">
+                                <div class="form-inline" data-phone-id="@phone.id">
+                                    @switch (phone.is_actual_id)
+                                    {
+                                        case 1:
+                                            {
+                                                <a href="#" class="list-group-item list-group-item-action list-group-item-empty" style="width: 130px;" data-phone="@phone.number">@phone.number</a>
+                                                <button type="button" class="btn btn-success ml-1 status__button" title="Пометить как актуальный номер"><i class="fa fa-check" aria-hidden="true"></i></button>
+                                                <button type="button" class="btn btn-danger ml-1 status__button" title="Пометить как неактуальный номер"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                break;
+                                            }
+                                        case 2:
+                                            {
+                                                <a href="#" class="list-group-item list-group-item-action list-group-item-success" style="width: 130px;" data-phone="@phone.number">@phone.number</a>
+                                                <button type="button" class="btn btn-danger ml-1 status__button" title="Пометить как неактуальный номер"><i class="fa fa-times" aria-hidden="true"></i></button>
+                                                break;
+                                            }
+                                        case 3:
+                                            {
+                                                <a href="#" class="list-group-item list-group-item-action list-group-item-danger" style="width: 130px;" data-phone="@phone.number">@phone.number</a>
+                                                <button type="button" class="btn btn-success ml-1 status__button" title="Пометить как актуальный номер"><i class="fa fa-check" aria-hidden="true"></i></button>
+                                                break;
+                                            }
+                                        default:
+                                            {
+                                                <p>Телефон не указан</p>
+                                                break;
+                                            }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    { <p>Телефон не указан</p>}
+                </td>
+                <td>
+                    @if (!String.IsNullOrEmpty(Model.Data[i].Mail))
+                    {
+                        <div class="form-group">
+                            <select class="form-control mb-1">
+
+                                @foreach (var mail in @Model.Data[i].Mail.Split("\n"))
+                                {
+                                    <option value='@mail'>@mail</option>
+                                }
+
+                            </select>
+                            <button type="button" class="btn btn-info sent-mail__button">Отправить</button>
+                        </div>
+                    }
+                    else
+                    { <p>Почта не указана</p>}
+                </td>
+                <td style="width: 100px;">@Model.Data[i].Address</td>
+                <td><a href="@Model.Data[i].SiteUrl" target="_blank">Ссылка</a></td>
+                <td class="comments__td">
+                    <p class="comments__for-change">@Model.Data[i].Comments</p>
+                    <div class="comments__changed"></div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <select class="form-control mb-1">
+
+                            @foreach (var manager in @Model.Data[i].Managers)
+                            {
+                                <option value='@manager.id'>@manager.short_name</option>
+                            }
+
+                        </select>
+                        <button type="button" class="btn btn-info sent-message__button">Отправить на почту</button>
+                    </div>
+                </td>
+                <td style="width: 186px;" class="status__td">
+                    <div class="form-group">
+                        <p class="status__for-change" data-status-id="@Model.Data[i].PositionStatus.Id">@Model.Data[i].PositionStatus.Name</p>
+                        <button class="btn btn-sm btn-info red-status__button" value="@Model.Data[i].Id" title="Редактировать"><i class="fa fa-pencil-square-o"></i></button>
+                    </div>
+                    <div class="status__changed form-group"></div>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+
+    @await Html.PartialAsync("~/Views/Partial/_Pagination.cshtml")
+}
+else { <p>Данных нет</p> }
+
+
+

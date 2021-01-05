@@ -1,0 +1,61 @@
+﻿@model CustomersFinder.Models.ViewModels.ExtendedPositionModel
+@{ 
+    ViewData["Title"] = "Информация по операциям";
+    Layout = "~/Views/Shared/_LayoutForExtendedPosition.cshtml"; 
+    }
+
+<div class="text-center"><h1>@ViewBag.Name</h1></div>
+<div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item"><b>Руководитель:</b> @Model.CustomerInfo.boss</li>
+        <li class="list-group-item"><b>Адрес:</b> @Model.CustomerInfo.address</li>
+        <li class="list-group-item"><b>ИНН:</b> @Model.CustomerInfo.INN</li>
+        <li class="list-group-item"><b>Почта:</b> @Model.CustomerInfo.mail</li>
+    </ul>
+</div>
+
+<hr />
+
+<div id="events__div">
+    @await Html.PartialAsync("EventsPartial")
+</div>
+
+<hr />
+
+<div class="d-none" id="posId">@Model.CustomerInfo.id</div>
+
+<div>
+    <div class="form-group">
+        <label for="commets__input">Добавить комментарий</label>
+        <textarea type="text" class="form-control" id="commets__input" placeholder="Введите сообщение"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary" id="add-comments__button">Добавить</button>
+</div>
+
+
+@section scripts
+    {
+    <script type="text/javascript">$(document).ready(function () {
+            $('#add-comments__button').on('click', function () {
+                var comments = document.getElementById('commets__input').value;
+                var posId = document.getElementById('posId').innerText;
+                $.ajax({
+                    url: "/ExtendedPosition/AddComments",
+                    dataType: "html",
+                    data: {
+                        posId: posId,
+                        comments: comments
+                    },
+                    type: "get",
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (data) {
+                        $('#events__table').find('tbody').append(data);
+                    },
+                    error: function (xhr) {
+                    }
+                });
+            });
+    });
+    </script>
+}
+

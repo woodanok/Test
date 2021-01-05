@@ -1,0 +1,42 @@
+﻿@if (Model.Pagination.PageCount > 1)
+{
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            @if (Model.Pagination.CurrentPage > 3)
+            {
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+
+            }
+
+            @if (Model.Pagination.CurrentPage - 2 > 0)
+            {
+                <li class="page-item"><a class="page-link" href="#">@(Model.Pagination.CurrentPage - 2)</a></li>
+            }
+
+            @if (Model.Pagination.CurrentPage - 1 > 0)
+            {
+                <li class="page-item"><a class="page-link" href="#">@(Model.Pagination.CurrentPage - 1)</a></li>
+            }
+
+            <li class="page-item disabled"><a class="page-link" href="#" style="color: white; background-color: blue;">@Model.Pagination.CurrentPage</a></li>
+
+            @if (Model.Pagination.CurrentPage + 1 < Model.Pagination.PageCount + 1)
+            {
+                <li class="page-item"><a class="page-link" href="#">@(Model.Pagination.CurrentPage + 1)</a></li>
+            }
+
+            @if (Model.Pagination.CurrentPage + 2 < Model.Pagination.PageCount + 1)
+            {
+                <li class="page-item"><a class="page-link" href="#">@(Model.Pagination.CurrentPage + 2)</a></li>
+            }
+
+            @if (Model.Pagination.CurrentPage < (Model.Pagination.PageCount - 2))
+            {
+                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                <li class="page-item"><a class="page-link" href="#">@Model.Pagination.PageCount</a></li>
+            }
+        </ul>
+    </nav>
+}
+

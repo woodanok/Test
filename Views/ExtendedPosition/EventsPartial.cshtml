@@ -1,0 +1,23 @@
+﻿@model CustomersFinder.Models.ViewModels.ExtendedPositionModel
+
+<table class="table table-bordered" id="events__table">
+    <thead>
+        <tr>
+            @*<th scope="col">#</th>*@
+            <th scope="col">Событие</th>
+            <th scope="col">Пользователь</th>
+            <th scope="col">Дата и время</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for(var i = 0; i < Model.Events.Count; i++)
+        {
+        <tr>
+            @*<td>@(i+1)</td>*@
+            <td>@Model.Events[i].Name</td>
+            <td>@Model.Events[i].UserName</td>
+            <td>@Model.Events[i].Date</td>
+        </tr>
+        }
+    </tbody>
+</table>
